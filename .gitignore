@@ -104,3 +104,6 @@ venv.bak/
 .mypy_cache/
 
 .DS_Store
+
+notebooks/instruments.csv
+notebooks/piano_rolls.csv
