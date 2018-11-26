@@ -22,19 +22,20 @@ class MidiDataset(Dataset):
             Get an indexer that treats each first level index as a sample.
         """
         return self.piano_rolls.index.get_level_values(0).unique()
-    
+
     def __getitem__(self, idx):
         """
-            Our frame is multi-index, so we're thinking each song is a single sample, 
+            Our frame is multi-index, so we're thinking each song is a single sample,
             and getting the individual bars is a transform of that sample?
         """
         indexer = self.get_indexer()
-        
+
         piano_rolls = self.piano_rolls.loc[indexer[idx]].values
         piano_rolls = piano_rolls.astype('float')
+
         sample = {'piano_rolls': piano_rolls}
 
-        if self.transform:
-            sample = self.transform(sample)
+        if self.transform is not None:
+            sample['piano_rolls'] = self.transform(piano_rolls)
 
         return sample
