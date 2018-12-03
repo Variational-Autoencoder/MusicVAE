@@ -5,16 +5,20 @@ def BarTransform(bars=1, note_count=60):
     split_size = bars*16
 
     def transform(sample):
-        sections = math.ceil(len(sample) / split_size)
+        sample_length = len(sample)
+
+        # Pad the sample with 0's if there's not enough to create equal splits into n bars
+        leftover = sample_length % split_size
+        if leftover != 0:
+            padding_size = split_size - leftover
+            padding = np.zeros((padding_size, note_count))
+            sample = np.append(sample, padding, axis=0)
+
+
+        sections = math.ceil(sample_length / split_size)
         # Split into X equal sections
         split_list = np.array_split(sample, indices_or_sections=sections)
 
-        # Pad the last section with zeroes if necessary
-        last_elem_size_diff = split_size - len(split_list[-1])
-
-        if last_elem_size_diff > 0:
-            for i in range(0, last_elem_size_diff):
-                split_list[-1] = np.vstack((split_list[-1], np.zeros(note_count)))
 
         return split_list
 
