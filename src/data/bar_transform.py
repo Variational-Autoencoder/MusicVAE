@@ -7,6 +7,9 @@ class BarTransform():
         self.split_size = bars*16
         self.note_count = note_count
 
+    def get_sections(self, sample_length):
+        return math.ceil(sample_length/ self.split_size)
+
     def __call__(self, sample):
         sample_length = len(sample)
 
@@ -18,7 +21,7 @@ class BarTransform():
             sample = np.append(sample, padding, axis=0)
 
 
-        sections = math.ceil(sample_length / self.split_size)
+        sections = self.get_sections(sample_length)
         # Split into X equal sections
         split_list = np.array_split(sample, indices_or_sections=sections)
 

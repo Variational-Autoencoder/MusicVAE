@@ -1,19 +1,20 @@
 import pandas as pd
+import numpy as np
 from torch.utils.data import Dataset, DataLoader
 import pretty_midi
 
 class MidiDataset(Dataset):
     """Pre-processed MIDI dataset."""
 
-    def __init__(self, csv_file, transform=None, midi_start=48, midi_end=108):
+    def __init__(self, csv_file, transform, midi_start=48, midi_end=108):
         """
         Args:
             csv_file (string): Path to the csv file with piano rolls per song.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
+            transform (callable): Transform to be applied on a sample, is expected to implement "get_sections".
             midi_start (int): The first midi note in the dataset
             midi_end (int): The last midi note in the dataset
         """
+
         dtypes = {'piano_roll_name': 'object', 'timestep': 'uint32'}
         column_names = [pretty_midi.note_number_to_name(n) for n in range(midi_start, midi_end)]
         for column in column_names:
@@ -22,8 +23,25 @@ class MidiDataset(Dataset):
         self.piano_rolls = pd.read_csv(csv_file, sep=';', index_col=['piano_roll_name', 'timestep'], dtype=dtypes)
         self.transform = transform
 
+        self.init_dataset()
+
+    def init_dataset(self):
+        """
+            Sets up an array containing a pd index (the song name) and the song section,
+            ie. [("Song Name:1", 0), ("Song Name:1", 1), ("Song Name:1", 2)]
+            for use in indexing a specific section
+        """
+        indexer = self._get_indexer()
+
+        self.index_mapper = []
+        for i in indexer:
+            split_count = self.transform.get_sections(len(self.piano_rolls.loc[i].values))
+            for j in range(0, split_count):
+                self.index_mapper.append((i, j))
+
+
     def __len__(self):
-        return len(self.piano_rolls.index.levels[0])
+        return len(self.index_mapper)
 
     def get_mem_usage(self):
         """
@@ -31,7 +49,7 @@ class MidiDataset(Dataset):
         """
         return self.piano_rolls.memory_usage(deep=True).sum() / 1024**2
 
-    def get_indexer(self):
+    def _get_indexer(self):
         """
             Get an indexer that treats each first level index as a sample.
         """
@@ -42,14 +60,12 @@ class MidiDataset(Dataset):
             Our frame is multi-index, so we're thinking each song is a single sample,
             and getting the individual bars is a transform of that sample?
         """
-        indexer = self.get_indexer()
+        song_name, section = self.index_mapper[idx]
 
-        piano_rolls = self.piano_rolls.loc[indexer[idx]].values
+        piano_rolls = self.piano_rolls.loc[song_name].values
         piano_rolls = piano_rolls.astype('float')
+        sample = self.transform(piano_rolls)[section]
 
-        sample = {'piano_rolls': piano_rolls}
-
-        if self.transform is not None:
-            sample['piano_rolls'] = self.transform(piano_rolls)
+        sample = {'piano_rolls': sample}
 
         return sample
