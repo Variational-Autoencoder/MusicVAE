@@ -26,7 +26,7 @@ class MidiBuilder():
         piano_roll = pd.DataFrame(sample, columns=self.column_names, dtype='uint8')
 
         program = 0
-        velocity = 42.
+        velocity = int(100)
         bps = tempo / 60
         sps = bps * 4 # sixteenth notes per second
 
