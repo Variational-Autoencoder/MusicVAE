@@ -68,7 +68,7 @@ class MidiDataset(Dataset):
         empty_rows = ~piano_rolls_with_silences.any(axis=1)
 
         if len(piano_rolls_with_silences[empty_rows]) > 0:
-            piano_rolls_with_silences[empty_rows][-1] = 1.
+            piano_rolls_with_silences[empty_rows, -1] = 1.
 
         sample = piano_rolls_with_silences.astype('float')
         sample = self.transform(sample)[section]
