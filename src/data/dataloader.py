@@ -63,8 +63,15 @@ class MidiDataset(Dataset):
         song_name, section = self.index_mapper[idx]
 
         piano_rolls = self.piano_rolls.loc[song_name].values
-        piano_rolls = piano_rolls.astype('float')
-        sample = self.transform(piano_rolls)[section]
+        silence_col = np.zeros((piano_rolls.shape[0], 1))
+        piano_rolls_with_silences = np.append(piano_rolls, silence_col, axis=1)
+        empty_rows = ~piano_rolls_with_silences.any(axis=1)
+
+        if len(piano_rolls_with_silences[empty_rows]) > 0:
+            piano_rolls_with_silences[empty_rows][-1] = 1.
+
+        sample = piano_rolls_with_silences.astype('float')
+        sample = self.transform(sample)[section]
 
         sample = {'piano_rolls': sample}
 
