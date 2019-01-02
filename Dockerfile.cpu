@@ -18,6 +18,6 @@ RUN apt-get update -y && \
 
 
 RUN conda install -y jupyter matplotlib scikit-learn nltk bokeh scikit-image
-
+RUN conda install -y pretty-midi librosa pandas music21 seaborn
 WORKDIR /work
 CMD ["bash"]
